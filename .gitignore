@@ -1,0 +1,6 @@
+*
+!*.asm
+!*.mac
+!Makefile
+!LICENSE
+!.gitignore

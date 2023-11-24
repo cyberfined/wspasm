@@ -1,0 +1,26 @@
+%define sys_write 1
+%define sys_open  2
+%define sys_close 3
+%define sys_brk   12
+
+%define stderr 2
+
+%define O_RDONLY 0
+%define O_WRONLY 1
+%define O_CREAT  64
+%define O_TRUNC  512
+
+%define io_buf_size 2048
+
+struc file_out
+    f_fd:     resd 1
+    f_offset: resd 1
+    f_buf:    resb io_buf_size
+endstruc
+
+struc file_in
+    f_fd:     resd 1
+    f_offset: resd 1
+    f_buf:    resb io_buf_size
+    f_size:   resd 1
+endstruc
