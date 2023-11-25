@@ -3,6 +3,7 @@ extern getchar
 %include "tokens.mac"
 %define number_state    1
 %define label_def_state 2
+%define char_state      3
 
 section .bss
 
@@ -18,6 +19,32 @@ section .data
 global line
 line: dd 1
 
+%define num_cmd_states 11
+cmd_states:
+db 'p'
+dq p_states
+db 'd'
+dq d_states
+db 'j'
+dq j_states
+db 's'
+dq s_states
+db 'm'
+dq m_states
+db 'g'
+dq g_states
+db 'a'
+dq a_states
+db 'l'
+dq l_states
+db 'c'
+dq c_states
+db 'r'
+dq r_states
+db 'e'
+dq e_states
+
+; push, putchar, putnum
 p_states:
 db 1, 'u', 2         ; 0: ['u' => 1]
 db 2, 's', 4, 't', 5 ; 1: ['s' => 2, 't' => 3]
@@ -31,6 +58,92 @@ db 1, 'm', 5         ; 8: ['m' => 10]
 db 1, 'r', 5         ; 9: ['r' => 11]
 db 1, 0, tok_putnum  ; 10: emit putnum
 db 1, 0, tok_putchar ; 11: emit putchar
+
+; dup, drop, div
+d_states:
+db 3, 'u', 6, 'r', 7, 'i', 8 ; 0: ['u' => 1, 'r' => 2, 'i' => 3]
+db 1, 'p', 8                 ; 1: ['p' => 4]
+db 1, 'o', 8                 ; 2: ['o' => 5]
+db 1, 'v', 8                 ; 3: ['i' => 6]
+db 1, 0, tok_dup             ; 4: emit dup
+db 1, 'p', 5                 ; 5: ['p' => 7]
+db 1, 0, tok_div             ; 6: emit div
+db 1, 0, tok_drop            ; 7: emit drop
+
+; jz, jl, jmp
+j_states:
+db 3, 'z', 6, 'l', 7, 'm', 8 ; 0: ['z' => 1, 'l' => 2, 'm' => 3]
+db 1, 0, tok_jz              ; 1: emit jz
+db 1, 0, tok_jl              ; 2: emit jl
+db 1, 'p', 2                 ; 3: ['p' => 4]
+db 1, 0, tok_jmp             ; 4: emit jmp
+
+; swap, sub, store
+s_states:
+db 3, 'w', 6, 'u', 7, 't', 8 ; 0: ['w' => 1, 'u' => 2, 't' => 3]
+db 1, 'a', 8                 ; 1: ['a' => 4]
+db 1, 'b', 8                 ; 2: ['b' => 5]
+db 1, 'o', 8                 ; 3: ['o' => 6]
+db 1, 'p', 8                 ; 4: ['p' => 7]
+db 1, 0, tok_sub             ; 5: emit sub
+db 1, 'r', 5                 ; 6: ['r' => 8]
+db 1, 0, tok_swap            ; 7: emit swap
+db 1, 'e', 2                 ; 8: ['e' => 9]
+db 1, 0, tok_store           ; 9: emit store
+
+; mul, mod
+m_states:
+db 2, 'u', 4, 'o', 5 ; 0: ['u' => 1, 'o' => 2]
+db 1, 'l', 5         ; 1: ['l' => 3]
+db 1, 'd', 5         ; 2: ['d' => 4]
+db 1, 0, tok_mul     ; 3: emit mul
+db 1, 0, tok_mod     ; 4: emit mod
+
+; getchar, getnum
+g_states:
+db 1, 'e', 2         ; 0: ['e' => 1]
+db 1, 't', 2         ; 1: ['t' => 2]
+db 2, 'c', 4, 'n', 5 ; 2: ['c' => 3, 'n' => 4]
+db 1, 'h', 5         ; 3: ['h' => 5]
+db 1, 'u', 5         ; 4: ['u' => 6]
+db 1, 'a', 5         ; 5: ['a' => 7]
+db 1, 'm', 5         ; 6: ['m' => 8]
+db 1, 'r', 5         ; 7: ['r' => 9]
+db 1, 0, tok_getnum  ; 8: emit getnum
+db 1, 0, tok_getchar ; 9: emit getchar
+
+; add
+a_states:
+db 1, 'd', 2     ; 0: ['d' => 1]
+db 1, 'd', 2     ; 1: ['d' => 2]
+db 1, 0, tok_add ; 2: emit add
+
+; load
+l_states:
+db 1, 'o', 2      ; 0: ['o' => 1]
+db 1, 'a', 2      ; 1: ['a' => 2]
+db 1, 'd', 2      ; 2: ['d' => 3]
+db 1, 0, tok_load ; 3: emit load
+
+; call
+c_states:
+db 1, 'a', 2      ; 0: ['a' => 1]
+db 1, 'l', 2      ; 1: ['l' => 2]
+db 1, 'l', 2      ; 2: ['l' => 3]
+db 1, 0, tok_call ; 3: emit call
+
+; ret
+r_states:
+db 1, 'e', 2     ; 0: ['e' => 1]
+db 1, 't', 2     ; 1: ['t' => 2]
+db 1, 0, tok_ret ; 2: emit ret
+
+; exit
+e_states:
+db 1, 'x', 2      ; 0: ['x' => 1]
+db 1, 'i', 2      ; 1: ['i' => 2]
+db 1, 't', 2      ; 2: ['t' => 3]
+db 1, 0, tok_exit ; emit exit
 
 section .text
 
@@ -58,13 +171,13 @@ is_alpha:
     je .true
     cmp al, 'Z'
     jle .true
+    cmp al, '_'
+    je .true
     cmp al, 'a'
     jl .false
     je .true
     cmp al, 'z'
     jle .true
-    cmp al, '_'
-    je .true
 .false:
     xor bl, bl
 .true:
@@ -125,13 +238,19 @@ next_token:
 
 .increment_column:
     inc r9d
+
+    ; if number
     cmp r10, number_state
-    ; je .number
+    je .number
     jl .get_state
 
     ; if label
     cmp r10, label_def_state
     je .label_def
+
+    ; if char
+    cmp r10, char_state
+    je .char
 
     ; if cmd
     jmp .cmd_read
@@ -143,21 +262,36 @@ next_token:
     test bh, bh    ; if comment
     jne .loop
     test di, di    ; if eof
-    je .emit_token ; emit eof
+    je .emit_eof
     test bl, bl    ; if space
     jne .loop
     cmp al, ';'
     je .start_comment
+    cmp al, '1'
+    jl .not_number
+    je .begin_number_state
+    cmp al, '9'
+    jle .begin_number_state
+.not_number:
+    cmp al, "'"
+    je .begin_char_state
 
-    cmp al, 'p'
-    je .begin_p_state
-
+    mov rdi, cmd_states
+    lea rcx, [rdi + num_cmd_states * 9]
+.try_get_cmd_state:
+    cmp al, [rdi]
+    je .begin_cmd_state
+    add rdi, 9
+    cmp rdi, rcx
+    jl .try_get_cmd_state
     jmp .begin_label_def
-.begin_p_state:
-    mov r10, p_states
+
+.begin_cmd_state:
+    mov r10, [rdi + 1]
     jmp .loop
 
 .start_comment:
+    xor r12, r12 ; token length = 0
     inc bh
     jmp .loop
 
@@ -185,6 +319,13 @@ next_token:
 
     add r10, 2
     loop .next_edge
+
+    ; we can't go to any edge,
+    ; so current token is either label or label definition
+    xor ebx, ebx ; is_from_cmd = 0, is_space = 0
+    inc bh       ; is_from_cmd = 1
+    or rbx, r11  ; restore is_space
+    mov r10, label_def_state
     jmp .label_def
 
 .next_cmd_state:
@@ -194,16 +335,53 @@ next_token:
 
 .try_emit_cmd_token:
     test r11, r11
-    je .label_def
+    jne .emit_cmd_token
+    mov r10, label_def_state
+    inc bh ; is_from_cmd = 1
+    jmp .label_def
+.emit_cmd_token:
     mov bl, [r10 + 1]
     jmp .emit_token ; if is_space
+
+.begin_number_state:
+    mov r10, number_state
+    jmp .loop
+
+.number:
+    test bl, bl
+    je .check_if_num
+    mov bl, tok_number
+    jmp .emit_token ; TODO: atoi
+.check_if_num:
+    cmp al, '0'
+    jl .ret_err_wrong_token
+    je .loop
+    cmp al, '9'
+    jg .ret_err_wrong_token
+    jmp .loop
 
 .begin_label_def:
     call is_alpha
     test bl, bl
-    jne .ret_err_wrong_token
+    je .ret_err_wrong_token
     mov r10, label_def_state
     jmp .loop
+
+.begin_char_state:
+    mov r10, char_state
+    jmp .loop
+
+.char:
+    cmp r12, 3
+    jg .ret_err_wrong_token
+    je .try_emit_char
+    jmp .loop
+    
+.try_emit_char:
+    cmp al, "'"
+    jne .ret_err_wrong_token
+    mov bl, tok_number ; TODO: return ascii code
+    jmp .emit_token
 
 .label_def:
     ; check if space
@@ -213,15 +391,23 @@ next_token:
     jmp .emit_token
 
 .check_if_alphanum:
+    mov r11, rbx ; save is_from_cmd
+    xor bh, bh ; is_from_cmd = 0
     call is_alphanum
     test bl, bl
-    je .loop
+    jne .loop
+
+    ; if is_from_cmd
+    test r11, r11
+    jne .ret_err_wrong_token
 
     cmp al, ':'
     jne .ret_err_wrong_token
     mov bl, tok_label_def
     jmp .emit_token
 
+.emit_eof:
+    xor bl, bl
 .emit_token:
     mov al, bl    ; return token
     mov rdi, r12  ; return it's length

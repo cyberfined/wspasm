@@ -5,7 +5,7 @@ extern strlen
 extern fwrite
 extern fflush
 extern init_allocator
-extern next_token
+extern test_lexer
 
 section .bss
 
@@ -79,7 +79,7 @@ _start:
     mov [fd_out], rax
 
     ; main logic
-    call next_token
+    call test_lexer
 
     ; close dst file
 
