@@ -1,6 +1,7 @@
 %define err_wrong_token    -1
 %define err_token_too_long -2
 %define err_io             -3
+%define err_number_too_big -4
 %define tok_eof             0
 %define tok_label           1
 %define tok_dup             2

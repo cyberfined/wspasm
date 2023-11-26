@@ -1,9 +1,10 @@
 extern getchar
 
 %include "tokens.mac"
-%define number_state    1
-%define label_def_state 2
-%define char_state      3
+%define number_state      1
+%define label_def_state   2
+%define char_state        3
+%define escape_char_state 4
 
 section .bss
 
@@ -198,7 +199,53 @@ is_alphanum:
 .false:
     ret
 
-; (int token, int value) next_token(void)
+; int atoi(void)
+atoi:
+    xor rax, rax
+    xor rcx, rcx
+    mov rbx, 1
+
+    lea rsi, [token_buf + r12 - 1]
+    mov rdi, token_buf
+    mov al, [rdi]
+    cmp al, '-'
+    jne .loop
+    inc rdi
+.loop:
+    ; rcx += (char - '0') * rbx
+    mov al, [rsi]
+    movzx rax, al
+    sub al, '0'
+    imul rbx
+    jc .overflow_err
+    add rcx, rax
+    jc .overflow_err
+
+    dec rsi
+    cmp rsi, rdi
+    jl .exit_loop
+
+    ; rbx *= 10
+    mov rax, rbx
+    mov dl, 10
+    imul rdx
+    jc .overflow_err
+    mov rbx, rax
+    jmp .loop
+
+.exit_loop:
+    mov rsi, rcx
+    cmp rdi, token_buf
+    je .exit
+    neg rsi
+.exit:
+    xor rax, rax
+    ret
+.overflow_err:
+    mov rax, -1
+    ret
+
+; (int token, int length, int number) next_token(void)
 ; regs: rdi, rsi, rdx, rbx, r8, r9, r10, r12
 global next_token
 next_token:
@@ -218,12 +265,15 @@ next_token:
     cmp rdi, 0
     jl .ret_io_error
 
-    ; append char to token if it's not a space
+    ; append char to token if it's not a space and current state is 0
     call is_space
+    test r10, r10
+    jne .append_char
     test bl, bl ; if space
     jne .not_append_char
     test bh, bh ; if comment
     jne .not_append_char
+.append_char:
     cmp r12, token_buf_size
     jge .ret_err_token_too_long
     mov [token_buf + r12], al
@@ -249,8 +299,8 @@ next_token:
     je .label_def
 
     ; if char
-    cmp r10, char_state
-    je .char
+    cmp r10, escape_char_state
+    jle .char
 
     ; if cmd
     jmp .cmd_read
@@ -267,7 +317,10 @@ next_token:
     jne .loop
     cmp al, ';'
     je .start_comment
-    cmp al, '1'
+    cmp al, '-'
+    je .begin_number_state
+    jl .not_number
+    cmp al, '0'
     jl .not_number
     je .begin_number_state
     cmp al, '9'
@@ -345,13 +398,30 @@ next_token:
 
 .begin_number_state:
     mov r10, number_state
+    cmp al, '-'
+    je .negative
+    xor bh, bh
+    jmp .loop
+.negative:
+    mov bh, al ; save first character
     jmp .loop
 
 .number:
     test bl, bl
     je .check_if_num
+    dec r12
+    test bh, bh
+    jne .check_number_length
+    jmp .emit_number
+.check_number_length:
+    cmp r12, 1
+    jle .ret_err_wrong_token
+.emit_number:
+    call atoi
+    cmp rax, 0
+    jl .ret_err_number_too_big
     mov bl, tok_number
-    jmp .emit_token ; TODO: atoi
+    jmp .emit_token
 .check_if_num:
     cmp al, '0'
     jl .ret_err_wrong_token
@@ -372,15 +442,40 @@ next_token:
     jmp .loop
 
 .char:
-    cmp r12, 3
+    cmp r12, r10 ; char_state = 3, escape_char_state = 4
     jg .ret_err_wrong_token
     je .try_emit_char
+
+    cmp al, '\'
+    jne .check_escape_seq
+    mov r10, escape_char_state
+    jmp .loop
+
+.check_escape_seq:
+    cmp r10, char_state
+    mov bh, al
+    je .loop
+
+    cmp al, 'n'
+    je .escape_newline
+    cmp al, 'r'
+    je .escape_caret
+    cmp al, 't'
+    jne .ret_err_wrong_token
+    mov bh, 9
+    jmp .loop
+.escape_newline:
+    mov bh, 10
+    jmp .loop
+.escape_caret:
+    mov bh, 13
     jmp .loop
     
 .try_emit_char:
     cmp al, "'"
     jne .ret_err_wrong_token
-    mov bl, tok_number ; TODO: return ascii code
+    mov bl, tok_number
+    movzx esi, bh ; char code
     jmp .emit_token
 
 .label_def:
@@ -388,6 +483,7 @@ next_token:
     test bl, bl
     je .check_if_alphanum
     mov bl, tok_label
+    dec r12
     jmp .emit_token
 
 .check_if_alphanum:
@@ -418,6 +514,10 @@ next_token:
     jmp .exit
 .ret_err_token_too_long:
     mov al, err_token_too_long
+    jmp .exit
+.ret_err_number_too_big:
+    mov al, err_number_too_big
+    movzx rax, al
     jmp .exit
 .ret_err_wrong_token:
     mov al, err_wrong_token

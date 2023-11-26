@@ -61,12 +61,14 @@ number_str: db "number "
 
 errors_str:
 dq err_wrong_token_str, 17
-dq err_token_too_long_str, 20
+dq err_token_too_long_str, 23
 dq err_io_str, 14
+dq err_number_too_big_str, 23
 
 err_wrong_token_str: db "err: wrong token", 10
-err_token_too_long_str: db "err: token too long", 10
+err_token_too_long_str: db "err: token is too long", 10
 err_io_str: db "err: io error", 10
+err_number_too_big_str: db "err: number is too big", 10 
 
 section .text
 

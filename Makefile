@@ -1,15 +1,15 @@
 NASM=nasm
 LD=ld
-NASMFLAGS=-felf64 -g
+NASMFLAGS=-felf64
 LDFLAGS=-z noseparate-code
 
 .PHONY: all clean
 
-all: wasm
-wasm: wasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o
-	$(LD) $(LDFLAGS) wasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o -o wasm
-wasm.o: wasm.asm
-	$(NASM) $(NASMFLAGS) wasm.asm -o wasm.o
+all: wspasm
+wspasm: wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o
+	$(LD) $(LDFLAGS) wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o -o wspasm
+wspasm.o: wspasm.asm
+	$(NASM) $(NASMFLAGS) wspasm.asm -o wspasm.o
 mem.o: mem.asm
 	$(NASM) $(NASMFLAGS) mem.asm -o mem.o
 bufio.o: bufio.asm
@@ -21,4 +21,4 @@ lexer.o: lexer.asm
 test_lexer.o: test_lexer.asm
 	$(NASM) $(NASMFLAGS) test_lexer.asm -o test_lexer.o
 clean:
-	rm -f wasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o wasm
+	rm -f wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o wspasm
