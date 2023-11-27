@@ -6,8 +6,9 @@ LDFLAGS=-z noseparate-code
 .PHONY: all clean
 
 all: wspasm
-wspasm: wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o
-	$(LD) $(LDFLAGS) wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o -o wspasm
+wspasm: wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o htable.o assembler.o
+	$(LD) $(LDFLAGS) wspasm.o mem.o bufio.o alloc.o lexer.o htable.o \
+		test_lexer.o assembler.o -o wspasm
 wspasm.o: wspasm.asm
 	$(NASM) $(NASMFLAGS) wspasm.asm -o wspasm.o
 mem.o: mem.asm
@@ -20,5 +21,10 @@ lexer.o: lexer.asm
 	$(NASM) $(NASMFLAGS) lexer.asm -o lexer.o
 test_lexer.o: test_lexer.asm
 	$(NASM) $(NASMFLAGS) test_lexer.asm -o test_lexer.o
+htable.o: htable.asm
+	$(NASM) $(NASMFLAGS) htable.asm -o htable.o
+assembler.o: assembler.asm
+	$(NASM) $(NASMFLAGS) assembler.asm -o assembler.o
 clean:
-	rm -f wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o wspasm
+	rm -f wspasm.o mem.o bufio.o alloc.o lexer.o test_lexer.o htable.o \
+		assembler.o wspasm

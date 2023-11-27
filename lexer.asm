@@ -188,7 +188,7 @@ is_alpha:
 is_alphanum:
     call is_alpha
     test bl, bl
-    jne .true
+    jne .false ; sounds like shit, but bl is already 1
     cmp al, '0'
     jl .false
     je .true
@@ -437,6 +437,30 @@ next_token:
     mov r10, label_def_state
     jmp .loop
 
+.label_def:
+    ; check if space
+    test bl, bl
+    je .check_if_alphanum
+    mov bl, tok_label
+    dec r12
+    jmp .emit_token
+
+.check_if_alphanum:
+    mov r11, rbx ; save is_from_cmd
+    xor bh, bh ; is_from_cmd = 0
+    call is_alphanum
+    test bl, bl
+    jne .loop
+
+    ; if is_from_cmd
+    test r11, r11
+    jne .ret_err_wrong_token
+
+    cmp al, ':'
+    jne .ret_err_wrong_token
+    mov bl, tok_label_def
+    jmp .emit_token
+
 .begin_char_state:
     mov r10, char_state
     jmp .loop
@@ -476,30 +500,6 @@ next_token:
     jne .ret_err_wrong_token
     mov bl, tok_number
     movzx esi, bh ; char code
-    jmp .emit_token
-
-.label_def:
-    ; check if space
-    test bl, bl
-    je .check_if_alphanum
-    mov bl, tok_label
-    dec r12
-    jmp .emit_token
-
-.check_if_alphanum:
-    mov r11, rbx ; save is_from_cmd
-    xor bh, bh ; is_from_cmd = 0
-    call is_alphanum
-    test bl, bl
-    jne .loop
-
-    ; if is_from_cmd
-    test r11, r11
-    jne .ret_err_wrong_token
-
-    cmp al, ':'
-    jne .ret_err_wrong_token
-    mov bl, tok_label_def
     jmp .emit_token
 
 .emit_eof:

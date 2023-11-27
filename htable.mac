@@ -1,0 +1,10 @@
+%define htable_pow  8
+%define htable_size (1 << htable_pow)
+
+%define err_htable_limit_exceed -1
+%define err_htable_duplicate    -2
+
+struc htable_t
+    ht_buf:  resb 10 * htable_size
+    ht_size: resw 1
+endstruc

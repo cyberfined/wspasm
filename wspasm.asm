@@ -7,6 +7,10 @@ extern fflush
 extern init_allocator
 extern test_lexer
 
+extern token_buf
+extern htable_insert
+extern htable_lookup
+
 section .bss
 
 global fd_out
@@ -23,11 +27,11 @@ resb io_buf_size
 resd 1
 
 section .data
-%define help_size 47
-help: db " <input.wasm> <output.ws>", 10, "whitespace assembler", 10
+%define help_size 49
+help: db " <input.wspasm> <output.ws>", 10, "whitespace assembler", 10
 
-%define prog_name_size 4
-prog_name: db "wasm"
+%define prog_name_size 6
+prog_name: db "wspasm"
 
 %define usage_size 7
 usage: db "Usage: "
@@ -43,6 +47,9 @@ open_src_file_error: db "Failed to open source file", 10
 
 %define open_dst_file_error_size 32
 open_dst_file_error: db "Failed to open destination file", 10
+
+key1: db "FZQxw21:"
+key2: db "72tK010:"
 
 section .text
 global _start
@@ -79,7 +86,41 @@ _start:
     mov [fd_out], rax
 
     ; main logic
-    call test_lexer
+    ;call test_lexer
+    mov rdi, token_buf
+    mov rsi, key1
+    mov r12, 8
+    mov rdx, r12
+    call memcpy
+    mov esi, 12
+    call htable_insert
+
+    mov rdi, token_buf
+    mov rsi, key2
+    mov r12, 8
+    mov rdx, r12
+    call memcpy
+    mov esi, 13
+    call htable_insert
+
+    mov r12, 8
+    call htable_lookup
+
+    mov rdi, token_buf
+    mov rsi, key1
+    mov r12, 8
+    mov rdx, r12
+    call memcpy
+    call htable_lookup
+
+    mov rdi, token_buf
+    mov rsi, key2
+    mov r12, 8
+    mov rdx, r12
+    call memcpy
+    mov esi, 13
+    call htable_insert
+
 
     ; close dst file
 
