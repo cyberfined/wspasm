@@ -1,12 +1,12 @@
 NASM=nasm
 LD=ld
 NASMFLAGS=-felf64
-LDFLAGS=-z noseparate-code
+LDFLAGS=-Tlinker.ld
 
 .PHONY: all clean
 
 all: wspasm
-wspasm: wspasm.o mem.o bufio.o alloc.o lexer.o htable.o assembler.o
+wspasm: linker.ld wspasm.o mem.o bufio.o alloc.o lexer.o htable.o assembler.o
 	$(LD) $(LDFLAGS) wspasm.o mem.o bufio.o alloc.o lexer.o htable.o assembler.o \
 		-o wspasm
 wspasm.o: wspasm.asm

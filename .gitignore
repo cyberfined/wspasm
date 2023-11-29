@@ -7,3 +7,4 @@
 !.gitignore
 !examples
 !examples/*.wspasm
+!linker.ld
