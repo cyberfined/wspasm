@@ -4,12 +4,10 @@ extern memcpy
 extern strlen
 extern fwrite
 extern fflush
+extern freset
 extern init_allocator
-extern test_lexer
-
-extern token_buf
-extern htable_insert
-extern htable_lookup
+extern collect_labels
+extern assemble
 
 section .bss
 
@@ -48,9 +46,6 @@ open_src_file_error: db "Failed to open source file", 10
 %define open_dst_file_error_size 32
 open_dst_file_error: db "Failed to open destination file", 10
 
-key1: db "FZQxw21:"
-key2: db "72tK010:"
-
 section .text
 global _start
 _start:
@@ -86,43 +81,10 @@ _start:
     mov [fd_out], rax
 
     ; main logic
-    ;call test_lexer
-    mov rdi, token_buf
-    mov rsi, key1
-    mov r12, 8
-    mov rdx, r12
-    call memcpy
-    mov esi, 12
-    call htable_insert
-
-    mov rdi, token_buf
-    mov rsi, key2
-    mov r12, 8
-    mov rdx, r12
-    call memcpy
-    mov esi, 13
-    call htable_insert
-
-    mov r12, 8
-    call htable_lookup
-
-    mov rdi, token_buf
-    mov rsi, key1
-    mov r12, 8
-    mov rdx, r12
-    call memcpy
-    call htable_lookup
-
-    mov rdi, token_buf
-    mov rsi, key2
-    mov r12, 8
-    mov rdx, r12
-    call memcpy
-    mov esi, 13
-    call htable_insert
-
-
-    ; close dst file
+    call collect_labels ; collect labels to hashtable
+    call freset ; reset fd_in
+    call assemble ; translate tokens to whitespace instructions
+    call fflush ; flush dst file
 
     xor rdi, rdi
     jmp exit
@@ -222,6 +184,7 @@ print_file_error:
     syscall
     mov rdi, 1
 
+global exit
 exit:
     mov rax, 60
     syscall

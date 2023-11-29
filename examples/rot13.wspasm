@@ -1,0 +1,104 @@
+; This code is shitty, i know it.
+; Do something with this, LOL.
+
+loop:
+  ; read char and load it to the top of the stack
+  push 0
+  getchar
+  push 0
+  load
+
+  ; check if character is alphabetical
+  dup
+  call is_alpha
+  jz rotate
+
+print_char:
+  ; print original character
+  putchar
+  jmp loop
+
+rotate:
+  ; Add 13 to current char
+  push 13
+  add
+
+  ; if (char - last_char <= 0) print character
+  ; dup character
+  dup
+  ; load last_char
+  push 1
+  load
+  sub
+  dup ; dup condition
+  jl drop_print
+  jz print_char
+
+  ; char -= 26
+  push 26
+  sub
+  jmp print_char
+
+drop_print:
+  drop ; drop condition
+  putchar
+  jmp loop
+
+; bool is_alpha(char)
+is_alpha:
+  ; last_char = 'Z'
+  push 1
+  push 'Z'
+  store
+
+  ; >= 'A'
+  dup ; dup character
+  push 'A'
+  sub
+  dup ; dup condition
+  jl is_alpha_drop_false
+  jz is_alpha_true
+
+  ; <= 'Z'
+  dup
+  push 'Z'
+  sub
+  dup
+  jl is_alpha_drop_true
+  jz is_alpha_true
+
+  ; last_char = 'z'
+  push 1
+  push 'z'
+  store
+
+  ; >= 'a'
+  dup
+  push 'a'
+  sub
+  dup
+  jl is_alpha_drop_false
+  jz is_alpha_true
+
+  ; <= 'z'
+  dup
+  push 'z'
+  sub
+  dup
+  jl is_alpha_drop_true
+  jz is_alpha_true
+  jmp is_alpha_false
+
+is_alpha_drop_true:
+  drop ; drop condition
+is_alpha_true:
+  drop ; drop character
+  push 0 ; return true
+  ret
+
+is_alpha_drop_false:
+  drop ; drop condition
+is_alpha_false:
+  drop   ; drop character
+  push 1 ; return false
+  ret

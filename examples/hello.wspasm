@@ -1,0 +1,32 @@
+; Push "Hello world\n" to the stack
+
+push '\n'
+push 'd'
+push 'l'
+push 'r'
+push 'o'
+push 'w'
+push ' '
+push 'o'
+push 'l'
+push 'l'
+push 'e'
+push 'H'
+
+push 12 ; string length
+
+loop:
+    swap ; swap length with char
+    putchar
+
+    ; length -= 1
+    push 1
+    sub
+
+    ; if (length == 0) exit
+    dup
+    jz end
+    jmp loop
+
+end:
+    exit

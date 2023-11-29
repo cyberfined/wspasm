@@ -2,5 +2,8 @@
 !*.asm
 !*.mac
 !Makefile
+!README.md
 !LICENSE
 !.gitignore
+!examples
+!examples/*.wspasm

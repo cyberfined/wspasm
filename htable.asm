@@ -23,8 +23,7 @@ jenkins_hash:
     cmp rcx, r12
     je .exit_loop
 
-    mov bl, [token_buf + rcx]
-    movzx ebx, bl
+    movzx ebx, byte [token_buf + rcx]
     add eax, ebx
     mov ebx, eax
     shl ebx, 10
@@ -63,7 +62,7 @@ htable_insert:
     mov byte [token_buf + r12 - 1], 0
     call jenkins_hash
 
-    ; step (ebx) = hash (edx) >> (64 - htable_pow) | 1
+    ; step (ebx) = hash (edx) >> (32 - htable_pow) | 1
     mov ebx, eax
     shr ebx, (32 - htable_pow)
     or bl, 1
@@ -78,12 +77,12 @@ htable_insert:
 
     mov eax, ecx
     mul r10
-    lea r8, [labels_table + ht_buf + eax]
-    mov r9, [r8]
-    test r9, r9
+    lea r13, [labels_table + ht_buf + eax]
+    mov r14, [r13]
+    test r14, r14
     je .insert_new
     
-    mov rdi, r9
+    mov rdi, r14
     mov rsi, token_buf
     call strcmp
     test al, al
@@ -97,9 +96,9 @@ htable_insert:
     jl print_allocate_error
 
     mov rdi, rax
-    mov [r8], rdi
+    mov [r13], rdi
     mov eax, r11d
-    mov [r8 + 8], ax
+    mov [r13 + 8], ax
 
     mov rsi, token_buf
     mov rdx, r12
@@ -113,7 +112,7 @@ htable_insert:
     mov al, err_htable_duplicate
     ret
 
-; short htable_lookup(size_t key_length)
+; void* htable_lookup(size_t key_length)
 global htable_lookup
 htable_lookup:
     ; last character of label def is semicolon,
@@ -121,7 +120,7 @@ htable_lookup:
     mov byte [token_buf + r12 - 1], 0
     call jenkins_hash
 
-    ; step (ebx) = hash (edx) >> (64 - htable_pow) | 1
+    ; step (ebx) = hash (edx) >> (32 - htable_pow) | 1
     mov ebx, eax
     shr ebx, (32 - htable_pow)
     or bl, 1
@@ -135,18 +134,18 @@ htable_lookup:
 
     mov eax, ecx
     mul r10
-    lea r8, [labels_table + ht_buf + eax]
-    mov r9, [r8]
-    test r9, r9
+    lea r13, [labels_table + ht_buf + eax]
+    mov r14, [r13]
+    test r14, r14
     je .not_found
 
     mov rdi, token_buf
-    mov rsi, r9
+    mov rsi, r14
     call strcmp
     test al, al
     je .found
     jmp .loop
 .not_found:
-    xor r8, r8
+    xor r13, r13
 .found:
     ret

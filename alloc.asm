@@ -30,7 +30,7 @@ init_allocator:
     ret
 
 ; void* allocate(size_t size)
-; regs: rsi, rdi
+; regs: rsi, rdi, rdx
 global allocate
 allocate:
     ; align size by 8
@@ -41,9 +41,10 @@ allocate:
     ; if heap_start + rsi > heap_end
     mov rax, [heap_start]
     mov rdi, [heap_end]
-    add rax, rsi
-    mov [heap_start], rax
-    cmp rax, rdi
+    mov rdx, rax
+    add rdx, rsi
+    mov [heap_start], rdx
+    cmp rdx, rdi
     jg .allocate
     ret
 

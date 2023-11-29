@@ -1,0 +1,26 @@
+; Sum numbers until negative number was entered
+
+push 0 ; initial sum value
+
+loop:
+    ; read number to 0 cell and load it on the top of stack
+    push 0
+    dup
+    getnum
+    load
+
+    ; if (number < 0) goto end
+    dup
+    jl end
+
+    ; sum number with sum value
+    add
+    jmp loop
+
+end:
+  drop ; drop negative number
+  putnum
+
+  push '\n'
+  putchar
+  exit

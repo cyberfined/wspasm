@@ -11,14 +11,14 @@ section .bss
 global column
 column: resd 1
 
+global line
+line: resd 1
+
 %define token_buf_size 256
 global token_buf
 token_buf: resb token_buf_size
 
 section .data
-
-global line
-line: dd 1
 
 %define num_cmd_states 11
 cmd_states:
@@ -213,8 +213,7 @@ atoi:
     inc rdi
 .loop:
     ; rcx += (char - '0') * rbx
-    mov al, [rsi]
-    movzx rax, al
+    movzx rax, byte [rsi]
     sub al, '0'
     imul rbx
     jc .overflow_err
@@ -251,10 +250,6 @@ global next_token
 next_token:
     ; is comment
     xor bh, bh
-    ; line
-    mov r8d, [line]
-    ; column
-    mov r9d, [column]
     ; states array
     xor r10, r10
     ; token length
@@ -315,6 +310,12 @@ next_token:
     je .emit_eof
     test bl, bl    ; if space
     jne .loop
+
+    ; token begin line
+    mov [line], r8d
+    ; token begin column
+    mov [column], r9d
+
     cmp al, ';'
     je .start_comment
     cmp al, '-'
@@ -507,21 +508,18 @@ next_token:
 .emit_token:
     mov al, bl    ; return token
     mov rdi, r12  ; return it's length
-    jmp .exit
+    ret
 
 .ret_io_error:
     mov al, err_io
-    jmp .exit
+    ret
 .ret_err_token_too_long:
     mov al, err_token_too_long
-    jmp .exit
+    ret
 .ret_err_number_too_big:
     mov al, err_number_too_big
     movzx rax, al
-    jmp .exit
+    ret
 .ret_err_wrong_token:
     mov al, err_wrong_token
-.exit:
-    mov [line], r8d
-    mov [column], r9d
     ret

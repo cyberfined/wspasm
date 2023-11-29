@@ -103,3 +103,17 @@ getchar:
 .eof:
     xor rdi, rdi
     ret
+
+; reset file read position
+; void freset(void)
+; regs: rsi, rdi, rdx
+global freset
+freset:
+    xor rsi, rsi
+    mov [fd_in + f_offset], esi
+    mov [fd_in + f_size], esi
+    mov rax, sys_lseek
+    mov edi, [fd_in + f_fd]
+    xor rdx, rdx
+    syscall
+    ret
