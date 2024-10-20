@@ -1,0 +1,258 @@
+; Gets n numbers, negative number is an end of input.
+; Checks if sum n_1 + n_2 + ... n_(m-1) is divided without a remainder by n_m.
+; Inspred by an article https://habr.com/ru/articles/851934/
+
+; heap[0] - number, heap[1] - last_number
+
+push 0
+dup
+
+; [sum, count]
+loop:
+    push 0
+    dup
+    getnum
+    load
+
+    ; [number, sum, count]
+    dup
+    jl check_input
+
+    ; [number, sum, count]
+    dup
+    push 1
+    swap
+    store ; heap[1] = number
+
+    ; [number, sum, count]
+    add
+    swap
+    push 1
+    add
+    swap
+
+    ; [sum, count]
+    jmp loop
+
+check_input:
+    ; [-1, sum, count]
+    drop
+    swap
+    push 2
+    sub
+
+    ; [count - 2, sum]
+    jl wrong_input
+
+    ; [sum]
+    push 1
+    load
+    dup
+
+    ; [last_number, last_number, sum]
+    jz zero_division_error
+
+    ; [last_number, sum]
+    sub
+
+    ; [sum - last_number]
+    dup
+    push 1
+    load
+
+    ; [last_number, sum - last_number, sum - last_number]
+    mod
+
+    ; [(sum - last_number) % last_number, sum - last_number]
+    push 1
+    load
+    swap
+
+    ; [(sum - last_number) % last_number, last_number, sum - last_number]
+    push '('
+    push 't'
+    push 'n'
+    push 'u'
+    push 'o'
+    push 'm'
+    push 'a'
+    push ' '
+    push 'd'
+    push 'e'
+    push 'r'
+    push 'e'
+    push 't'
+    push 'n'
+    push 'e'
+    push 15
+    call print_string
+
+    ; [(sum - last_number) % last_number, last_number, sum - last_number]
+    jz success
+
+    ; failure [last_number, sum - last_number]
+    swap
+    putnum
+
+    ; [last_number]
+    push ' '
+    push 'y'
+    push 'b'
+    push ' '
+    push 'e'
+    push 'l'
+    push 'b'
+    push 'i'
+    push 's'
+    push 'i'
+    push 'v'
+    push 'i'
+    push 'd'
+    push ' '
+    push 't'
+    push 'o'
+    push 'n'
+    push ' '
+    push 's'
+    push 'i'
+    push ' '
+    push ')'
+    push 22
+    call print_string
+
+    putnum
+    push ' '
+    putchar
+
+    call without_remainder
+    push '\n'
+    putchar
+    exit
+
+wrong_input:
+    push '\n'
+    push 't'
+    push 'u'
+    push 'p'
+    push 'n'
+    push 'i'
+    push ' '
+    push 'd'
+    push 'i'
+    push 'l'
+    push 'a'
+    push 'v'
+    push 'n'
+    push 'i'
+    push ' '
+    push ','
+    push 'r'
+    push 'o'
+    push 'r'
+    push 'r'
+    push 'e'
+    push 21
+    call print_string
+    exit
+
+zero_division_error:
+    push '\n'
+    push 'r'
+    push 'o'
+    push 'r'
+    push 'r'
+    push 'e'
+    push ' '
+    push 'n'
+    push 'o'
+    push 'i'
+    push 's'
+    push 'i'
+    push 'v'
+    push 'i'
+    push 'd'
+    push ' '
+    push 'o'
+    push 'r'
+    push 'e'
+    push 'z'
+    push 20
+    call print_string
+    exit
+
+success:
+    ; [last_number, sum - last_number]
+    swap
+    putnum
+
+    ; [last_number]
+    push ' '
+    push 'd'
+    push 'e'
+    push 'd'
+    push 'i'
+    push 'v'
+    push 'i'
+    push 'd'
+    push ' '
+    push 's'
+    push 'i'
+    push ' '
+    push ')'
+    push 13
+    call print_string
+
+    call without_remainder
+
+    push ' '
+    push 'y'
+    push 'b'
+    push ' '
+    push 4
+    call print_string
+
+    putnum
+    push '\n'
+    putchar
+    exit
+
+; void without_remainder(void)
+without_remainder:
+    push 'r'
+    push 'e'
+    push 'd'
+    push 'n'
+    push 'i'
+    push 'a'
+    push 'm'
+    push 'e'
+    push 'r'
+    push ' '
+    push 't'
+    push 'u'
+    push 'o'
+    push 'h'
+    push 't'
+    push 'i'
+    push 'w'
+    push 17
+    call print_string
+    ret
+
+; void print_string(int length, char *str)
+print_string:
+    swap ; swap length with char
+    putchar
+
+    ; length -= 1
+    push 1
+    sub
+
+    ; if (length == 0) return
+    dup
+    jz end_print_string
+    jmp print_string
+
+end_print_string:
+    drop
+    ret
